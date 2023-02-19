@@ -1,4 +1,4 @@
-package fr.emevel.locallink;
+package fr.emevel.locallink.server;
 
 import java.io.IOException;
 import java.util.Scanner;
