@@ -1,9 +1,11 @@
 package fr.emevel.locallink.server;
 
 import fr.emevel.locallink.network.LinkSocket;
-import fr.emevel.locallink.network.Packet;
+import fr.emevel.locallink.network.packets.Packet;
 import fr.emevel.locallink.network.PacketConsumerList;
 import fr.emevel.locallink.network.Signatures;
+import fr.emevel.locallink.network.packets.PacketAskFolders;
+import fr.emevel.locallink.network.packets.PacketFolderList;
 import fr.emevel.locallink.network.packets.PacketHandShake;
 
 import java.io.IOException;
@@ -16,6 +18,7 @@ public class LocalLinkClient extends LinkSocket {
     public LocalLinkClient(Socket socket) throws IOException {
         super(socket);
         packetConsumerList.addConsumer(PacketHandShake.class, this::handshake);
+        packetConsumerList.addConsumer(PacketFolderList.class, this::receiveFolder);
     }
 
     @Override
@@ -35,6 +38,12 @@ public class LocalLinkClient extends LinkSocket {
             return;
         }
         safeSendPacket(new PacketHandShake("LocalLink Server", Signatures.VERSION));
+
+        safeSendPacket(new PacketAskFolders());
+    }
+
+    public void receiveFolder(PacketFolderList packet) {
+        System.out.println(packet.toString());
     }
 
 }
