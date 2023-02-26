@@ -11,13 +11,14 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 public class FileSender implements Runnable {
 
     public static final List<FileSender> currentlySending = new ArrayList<>();
 
     private final PacketReceiver client;
-    private final String folder;
+    private final UUID folder;
     private final File file;
     private final int bufferSize;
     private ServerSocket socket;
@@ -27,7 +28,7 @@ public class FileSender implements Runnable {
     @Getter
     private long current = 0;
 
-    public FileSender(PacketReceiver client, String folder, File file, int bufferSize) {
+    public FileSender(PacketReceiver client, UUID folder, File file, int bufferSize) {
         this.client = client;
         this.folder = folder;
         this.file = file;

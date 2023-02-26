@@ -4,6 +4,7 @@ import fr.emevel.locallink.network.PacketReceiver;
 import fr.emevel.locallink.network.packets.PacketDeleteFiles;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -28,7 +29,7 @@ public class FileSenderExecutor {
         }
     }
 
-    public void execute(PacketReceiver client, String folder, List<FileAction> actions) {
+    public void execute(PacketReceiver client, UUID folder, List<FileAction> actions) {
         PacketDeleteFiles.Builder deleteBuilder = PacketDeleteFiles.builder();
         for (FileAction action : actions) {
             if (action.getAction() == FileAction.Action.REMOVE) {

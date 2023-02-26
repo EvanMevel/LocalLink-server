@@ -2,22 +2,33 @@ package fr.emevel.locallink.server.sync;
 
 import fr.emevel.locallink.network.SyncFile;
 import fr.emevel.locallink.network.packets.PacketFileList;
-import lombok.RequiredArgsConstructor;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
-@RequiredArgsConstructor
-public class LocalSyncFolder implements SyncFolder {
+public class LocalSyncFolder implements SyncFolder, Serializable {
 
-    private final File folder;
+    private File folder;
+    private UUID uuid;
     private transient List<SyncFile> files;
+
+    public LocalSyncFolder(File folder) {
+        this.folder = folder;
+        this.uuid = UUID.randomUUID();
+    }
+
+    @Override
+    public UUID getUuid() {
+        return uuid;
+    }
 
     @Override
     public String getName() {
-        return folder.getName();
+        return folder.getPath();
     }
 
     protected void updateFiles() throws IOException {
