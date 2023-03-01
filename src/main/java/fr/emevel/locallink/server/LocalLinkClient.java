@@ -19,14 +19,17 @@ public class LocalLinkClient extends LinkSocket {
 
     private final PacketConsumerList packetConsumerList = new PacketConsumerList();
     private final List<Pair<SyncFolder, List<PacketFileList>>> folders = new ArrayList<>();
-    private final FileSenderExecutor fileSenderExecutor = new FileSenderExecutor(5, 1024);
+    private final FileSenderExecutor fileSenderExecutor;
     private final LocalLinkServerData data;
+    private final Runnable dataSaver;
     private String name;
     private UUID uuid;
 
-    public LocalLinkClient(LocalLinkServerData data, Socket socket) throws IOException {
+    public LocalLinkClient(LocalLinkServerData data, Socket socket, Runnable dataSaver) throws IOException {
         super(socket);
         this.data = data;
+        this.dataSaver = dataSaver;
+        this.fileSenderExecutor = new FileSenderExecutor(5, 1024);
         packetConsumerList.addConsumer(PacketHandShake.class, this::handshake);
         packetConsumerList.addConsumer(PacketFolderList.class, this::receiveFolder);
         packetConsumerList.addConsumer(PacketFileList.class, this::receiveFiles);
@@ -57,6 +60,7 @@ public class LocalLinkClient extends LinkSocket {
         safeSendPacket(new PacketCreateLink(folderUuid, folder));
         data.getUserFolders()
                 .computeIfAbsent(this.uuid, k -> new ArrayList<>()).add(folderUuid);
+        dataSaver.run();
     }
 
     private void handshake(PacketHandShake packet) {

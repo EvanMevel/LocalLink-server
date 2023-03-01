@@ -34,7 +34,15 @@ public class ServerMain {
     public static void main(String[] args) throws IOException {
         LocalLinkServerData data = loadData();
 
-        server = new LocalLinkServer(data);
+        Runnable dataSaver = () -> {
+            try {
+                save(data);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        };
+
+        server = new LocalLinkServer(data, dataSaver);
 
         server.start();
 
