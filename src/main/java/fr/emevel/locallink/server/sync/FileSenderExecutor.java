@@ -2,7 +2,9 @@ package fr.emevel.locallink.server.sync;
 
 import fr.emevel.locallink.network.PacketReceiver;
 import fr.emevel.locallink.network.packets.PacketDeleteFiles;
+import lombok.Getter;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
@@ -13,6 +15,8 @@ public class FileSenderExecutor {
 
     private final ExecutorService executor;
     private final int bufferSize;
+    @Getter
+    private final List<FileSender> currentlySending = new ArrayList<>();
 
     public FileSenderExecutor(int threadNumber, int bufferSize) {
         this.executor = Executors.newFixedThreadPool(threadNumber);
@@ -35,7 +39,8 @@ public class FileSenderExecutor {
             if (action.getAction() == FileAction.Action.REMOVE) {
                 deleteBuilder.addFile(folder, action.getFile().getName());
             } else {
-                executor.submit(new FileSender(client, folder, action.getFile(), bufferSize));
+                executor.submit(new FileSender(client, folder, action.getFile(), bufferSize,
+                        currentlySending::add, currentlySending::remove));
             }
         }
         if (deleteBuilder.size() > 0) {

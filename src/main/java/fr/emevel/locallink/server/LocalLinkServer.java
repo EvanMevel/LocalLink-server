@@ -22,6 +22,11 @@ public class LocalLinkServer {
             protected LinkSocket createClient(Socket sock) throws IOException {
                 return LocalLinkServer.this.createClient(sock);
             }
+
+            @Override
+            protected void clientDisconnected(LinkSocket client) {
+                LocalLinkServer.this.clientDisconnected(client);
+            }
         };
         this.dataSaver = dataSaver;
         this.jmDNSServer = new JmDNSServerThread(this.networkServer.getPort());
@@ -40,6 +45,9 @@ public class LocalLinkServer {
 
     protected LinkSocket createClient(Socket sock) throws IOException {
         return new LocalLinkClient(data, sock, dataSaver);
+    }
+
+    protected void clientDisconnected(LinkSocket client) {
     }
 
     public void createLocalSyncFolder(File folder) {

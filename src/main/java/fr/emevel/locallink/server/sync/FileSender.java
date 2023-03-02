@@ -9,16 +9,15 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
+import java.util.function.Consumer;
 
 public class FileSender implements Runnable {
 
-    public static final List<FileSender> currentlySending = new ArrayList<>();
-
     private final PacketReceiver client;
+    @Getter
     private final UUID folder;
+    @Getter
     private final File file;
     private final int bufferSize;
     private ServerSocket socket;
@@ -27,13 +26,17 @@ public class FileSender implements Runnable {
     private final long length;
     @Getter
     private long current = 0;
+    Consumer<FileSender> onStart;
+    Consumer<FileSender> onEnd;
 
-    public FileSender(PacketReceiver client, UUID folder, File file, int bufferSize) {
+    public FileSender(PacketReceiver client, UUID folder, File file, int bufferSize, Consumer<FileSender> onStart, Consumer<FileSender> onEnd) {
         this.client = client;
         this.folder = folder;
         this.file = file;
         this.bufferSize = bufferSize;
         this.length = file.length();
+        this.onStart = onStart;
+        this.onEnd = onEnd;
     }
 
     private void close() {
@@ -79,7 +82,7 @@ public class FileSender implements Runnable {
 
     @Override
     public void run() {
-        currentlySending.add(this);
+        onStart.accept(this);
         try {
             waitClient();
             sendFile();
@@ -88,7 +91,7 @@ public class FileSender implements Runnable {
             System.err.println("Error while sending file");
             e.printStackTrace();
         } finally {
-            currentlySending.remove(this);
+            onEnd.accept(this);
         }
     }
 

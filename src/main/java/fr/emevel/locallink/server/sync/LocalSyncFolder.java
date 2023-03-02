@@ -2,6 +2,7 @@ package fr.emevel.locallink.server.sync;
 
 import fr.emevel.locallink.network.SyncFile;
 import fr.emevel.locallink.network.packets.PacketFileList;
+import lombok.Getter;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,18 +13,15 @@ import java.util.UUID;
 
 public class LocalSyncFolder implements SyncFolder, Serializable {
 
+    @Getter
     private File folder;
+    @Getter
     private UUID uuid;
     private transient List<SyncFile> files;
 
     public LocalSyncFolder(File folder) {
         this.folder = folder;
         this.uuid = UUID.randomUUID();
-    }
-
-    @Override
-    public UUID getUuid() {
-        return uuid;
     }
 
     @Override

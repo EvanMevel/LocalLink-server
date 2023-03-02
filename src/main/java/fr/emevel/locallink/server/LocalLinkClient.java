@@ -7,6 +7,7 @@ import fr.emevel.locallink.network.packets.*;
 import fr.emevel.locallink.server.sync.FileAction;
 import fr.emevel.locallink.server.sync.FileSenderExecutor;
 import fr.emevel.locallink.server.sync.SyncFolder;
+import lombok.Getter;
 import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
@@ -19,17 +20,22 @@ public class LocalLinkClient extends LinkSocket {
 
     private final PacketConsumerList packetConsumerList = new PacketConsumerList();
     private final List<Pair<SyncFolder, List<PacketFileList>>> folders = new ArrayList<>();
+    @Getter
     private final FileSenderExecutor fileSenderExecutor;
     private final LocalLinkServerData data;
     private final Runnable dataSaver;
+    @Getter
     private String name;
+    @Getter
     private UUID uuid;
+    @Getter
+    private List<PacketFolderList.Folder> clientFolders;
 
     public LocalLinkClient(LocalLinkServerData data, Socket socket, Runnable dataSaver) throws IOException {
         super(socket);
         this.data = data;
         this.dataSaver = dataSaver;
-        this.fileSenderExecutor = new FileSenderExecutor(5, 1024);
+        this.fileSenderExecutor = new FileSenderExecutor(5, 1);
         packetConsumerList.addConsumer(PacketHandShake.class, this::handshake);
         packetConsumerList.addConsumer(PacketFolderList.class, this::receiveFolder);
         packetConsumerList.addConsumer(PacketFileList.class, this::receiveFiles);
@@ -56,11 +62,17 @@ public class LocalLinkClient extends LinkSocket {
         safeSendPacket(new PacketAskFolders());
     }
 
-    public void createLink(UUID folderUuid, String folder) {
-        safeSendPacket(new PacketCreateLink(folderUuid, folder));
+    public void createLink(UUID uuid, String folder) {
+        safeSendPacket(new PacketCreateLink(uuid, folder));
         data.getUserFolders()
-                .computeIfAbsent(this.uuid, k -> new ArrayList<>()).add(folderUuid);
+                .computeIfAbsent(this.uuid, k -> new ArrayList<>()).add(uuid);
         dataSaver.run();
+
+        safeSendPacket(new PacketAskFiles(uuid));
+    }
+
+    public void createLink(SyncFolder syncFolder, String folder) {
+        createLink(syncFolder.getUuid(), folder);
     }
 
     private void handshake(PacketHandShake packet) {
@@ -76,6 +88,8 @@ public class LocalLinkClient extends LinkSocket {
         name = packet.getName();
         uuid = packet.getUuid();
         safeSendPacket(new PacketHandShake(data.getName(), data.getUuid(), Signatures.VERSION));
+
+        askFolders();
 
         List<UUID> dataFolders = data.getUserFolders().get(packet.getUuid());
         if (dataFolders == null) {
@@ -94,6 +108,7 @@ public class LocalLinkClient extends LinkSocket {
 
     private void receiveFolder(PacketFolderList packet) {
         System.out.println(packet.toString());
+        clientFolders = packet.getFolders();
     }
 
     private void executeSync(Pair<SyncFolder, List<PacketFileList>> sync) {

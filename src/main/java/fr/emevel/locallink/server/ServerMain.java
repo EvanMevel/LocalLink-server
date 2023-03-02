@@ -7,8 +7,7 @@ public class ServerMain {
 
     public static LocalLinkServer server;
 
-    private static void save(LocalLinkServerData data) throws IOException {
-        File file = new File("server.dat");
+    public static void saveDataToFile(LocalLinkServerData data, File file) throws IOException {
         if (!file.exists()) {
             file.createNewFile();
         }
@@ -17,11 +16,10 @@ public class ServerMain {
         }
     }
 
-    private static LocalLinkServerData loadData() throws IOException {
-        File file = new File("server.dat");
+    public static LocalLinkServerData loadDataFromFile(File file) throws IOException {
         if (!file.exists()) {
             LocalLinkServerData data = new LocalLinkServerData();
-            save(data);
+            saveDataToFile(data, file);
             return data;
         }
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))){
@@ -32,11 +30,11 @@ public class ServerMain {
     }
 
     public static void main(String[] args) throws IOException {
-        LocalLinkServerData data = loadData();
+        LocalLinkServerData data = loadDataFromFile(new File("server.dat"));
 
         Runnable dataSaver = () -> {
             try {
-                save(data);
+                saveDataToFile(data, new File("server.dat"));
             } catch (IOException e) {
                 e.printStackTrace();
             }
