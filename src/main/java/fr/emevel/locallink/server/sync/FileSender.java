@@ -63,7 +63,7 @@ public class FileSender implements Runnable {
                 clientSocket.getOutputStream().write(buffer, 0, read);
                 synchronized (this) {
                     try {
-                        wait(1000);
+                        wait(10);
                     } catch (InterruptedException e) {
                         throw new RuntimeException(e);
                     }

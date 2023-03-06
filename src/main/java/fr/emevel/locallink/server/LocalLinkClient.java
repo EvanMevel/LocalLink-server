@@ -35,7 +35,7 @@ public class LocalLinkClient extends LinkSocket {
         super(socket);
         this.data = data;
         this.dataSaver = dataSaver;
-        this.fileSenderExecutor = new FileSenderExecutor(5, 1);
+        this.fileSenderExecutor = new FileSenderExecutor(5, 1024);
         packetConsumerList.addConsumer(PacketHandShake.class, this::handshake);
         packetConsumerList.addConsumer(PacketFolderList.class, this::receiveFolder);
         packetConsumerList.addConsumer(PacketFileList.class, this::receiveFiles);
