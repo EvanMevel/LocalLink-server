@@ -15,11 +15,21 @@ import java.util.UUID;
 public class LocalLinkServerData implements Serializable {
 
     private UUID uuid = UUID.randomUUID();
-    private String name = InetAddress.getLocalHost().getHostName();
+    private String name = getLocalHostName();
     private SyncFolderList folders = new SyncFolderList();
     private int port = 0;
     private Map<UUID, List<UUID>> userFolders = new HashMap<>();
+    private InetAddress address = null;
 
-    public LocalLinkServerData() throws UnknownHostException {
+    public LocalLinkServerData() {
     }
+
+    private static String getLocalHostName() {
+        try {
+            return InetAddress.getLocalHost().getHostName();
+        } catch (UnknownHostException e) {
+            return "Unknown";
+        }
+    }
+
 }

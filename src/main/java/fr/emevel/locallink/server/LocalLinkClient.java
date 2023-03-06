@@ -39,6 +39,7 @@ public class LocalLinkClient extends LinkSocket {
         packetConsumerList.addConsumer(PacketHandShake.class, this::handshake);
         packetConsumerList.addConsumer(PacketFolderList.class, this::receiveFolder);
         packetConsumerList.addConsumer(PacketFileList.class, this::receiveFiles);
+        packetConsumerList.addConsumer(PacketLinkCreated.class, this::linkCreated);
     }
 
     @Override
@@ -62,17 +63,14 @@ public class LocalLinkClient extends LinkSocket {
         safeSendPacket(new PacketAskFolders());
     }
 
-    public void createLink(UUID uuid, String folder) {
-        safeSendPacket(new PacketCreateLink(uuid, folder));
+    public void createLink(SyncFolder syncFolder, String folder) {
         data.getUserFolders()
-                .computeIfAbsent(this.uuid, k -> new ArrayList<>()).add(uuid);
+                .computeIfAbsent(this.uuid, k -> new ArrayList<>()).add(syncFolder.getUuid());
         dataSaver.run();
 
-        safeSendPacket(new PacketAskFiles(uuid));
-    }
+        folders.add(Pair.of(syncFolder, new ArrayList<>()));
 
-    public void createLink(SyncFolder syncFolder, String folder) {
-        createLink(syncFolder.getUuid(), folder);
+        safeSendPacket(new PacketCreateLink(syncFolder.getUuid(), folder));
     }
 
     private void handshake(PacketHandShake packet) {
@@ -121,6 +119,7 @@ public class LocalLinkClient extends LinkSocket {
     }
 
     private void receiveFiles(PacketFileList packet) {
+        System.out.println("Received files " + packet);
         for (Pair<SyncFolder, List<PacketFileList>> folder : folders) {
             if (folder.getKey().getUuid().equals(packet.getFolder())) {
                 folder.getValue().add(packet);
@@ -131,6 +130,11 @@ public class LocalLinkClient extends LinkSocket {
                 return;
             }
         }
+        System.out.println("Received files for unknown folder " + packet.getFolder());
+    }
+
+    private void linkCreated(PacketLinkCreated packet) {
+        safeSendPacket(new PacketAskFiles(packet.getFolder()));
     }
 
     @Override
