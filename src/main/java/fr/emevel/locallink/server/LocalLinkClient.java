@@ -8,18 +8,15 @@ import fr.emevel.locallink.server.sync.FileAction;
 import fr.emevel.locallink.server.sync.FileSenderExecutor;
 import fr.emevel.locallink.server.sync.SyncFolder;
 import lombok.Getter;
-import org.apache.commons.lang3.tuple.Pair;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
 public class LocalLinkClient extends LinkSocket {
 
     private final PacketConsumerList packetConsumerList = new PacketConsumerList();
-    private final List<Pair<SyncFolder, List<PacketFileList>>> folders = new ArrayList<>();
+    private final Map<SyncFolder, List<PacketFileList>> folders = new HashMap<>();
     @Getter
     private final FileSenderExecutor fileSenderExecutor;
     private final LocalLinkServerData data;
@@ -54,7 +51,7 @@ public class LocalLinkClient extends LinkSocket {
     }
 
     public void runSync() {
-        for (Pair<SyncFolder, List<PacketFileList>> folder : folders) {
+        for (Map.Entry<SyncFolder, List<PacketFileList>> folder : folders.entrySet()) {
             safeSendPacket(new PacketAskFiles(folder.getKey().getUuid()));
         }
     }
@@ -68,7 +65,7 @@ public class LocalLinkClient extends LinkSocket {
                 .computeIfAbsent(this.uuid, k -> new ArrayList<>()).add(syncFolder.getUuid());
         dataSaver.run();
 
-        folders.add(Pair.of(syncFolder, new ArrayList<>()));
+        folders.put(syncFolder, new ArrayList<>());
 
         safeSendPacket(new PacketCreateLink(syncFolder.getUuid(), folder));
     }
@@ -96,7 +93,7 @@ public class LocalLinkClient extends LinkSocket {
         for (UUID folderId : dataFolders) {
             SyncFolder folder = data.getFolders().getFolder(folderId);
             if (folder != null) {
-                folders.add(Pair.of(folder, new ArrayList<>()));
+                folders.put(folder, new ArrayList<>());
             } else {
                 System.out.println(packet.getName() + " >> Folder " + folderId + " not found");
             }
@@ -109,10 +106,10 @@ public class LocalLinkClient extends LinkSocket {
         clientFolders = packet.getFolders();
     }
 
-    private void executeSync(Pair<SyncFolder, List<PacketFileList>> sync) {
+    private void executeSync(SyncFolder folder, List<PacketFileList> list) {
         try {
-            List<FileAction> actions = sync.getKey().needUpdate(sync.getValue());
-            fileSenderExecutor.execute(this, sync.getKey().getUuid(), actions);
+            List<FileAction> actions = folder.needUpdate(list);
+            fileSenderExecutor.execute(this, folder.getUuid(), actions);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -120,11 +117,11 @@ public class LocalLinkClient extends LinkSocket {
 
     private void receiveFiles(PacketFileList packet) {
         System.out.println("Received files " + packet);
-        for (Pair<SyncFolder, List<PacketFileList>> folder : folders) {
+        for (Map.Entry<SyncFolder, List<PacketFileList>> folder : folders.entrySet()) {
             if (folder.getKey().getUuid().equals(packet.getFolder())) {
                 folder.getValue().add(packet);
                 if (packet.isEnd()) {
-                    executeSync(folder);
+                    executeSync(folder.getKey(), folder.getValue());
                     folder.getValue().clear();
                 }
                 return;
